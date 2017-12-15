@@ -3,7 +3,7 @@
 
 #define DATA_PORT          PORTD
 #define DATA_DDR           DDRD
-#define DATA_PIN           7
+#define DATA_PIN           6
 #define NUMBER_OF_PIXELS   528
 
 
