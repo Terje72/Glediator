@@ -1,55 +1,24 @@
-
-
-
 #define DATA_PORT          PORTD
 #define DATA_DDR           DDRD
 #define DATA_PIN           6
 #define NUMBER_OF_PIXELS   528
 
-
-//##############################################################################
-//                                                                             #
-// Variables                                                                   #
-//                                                                             #
-//##############################################################################
-
 unsigned char display_buffer[NUMBER_OF_PIXELS * 3];
 static unsigned char *ptr;
 static unsigned int pos = 0;
-
 volatile unsigned char go = 0;
 
-
-//##############################################################################
-//                                                                             #
-// Setup                                                                       #
-//                                                                             #
-//##############################################################################
-
 void setup()
-{
-	// Set data pin as output
+{	
 	DATA_DDR |= (1 << DATA_PIN);
-	
-	// Initialize UART
 	UCSR0A |= (1<<U2X0);
 	UCSR0B |= (1<<RXEN0)  | (1<<TXEN0) | (1<<RXCIE0);
 	UCSR0C |= (1<<UCSZ01) | (1<<UCSZ00)             ;
 	UBRR0H = 0;
-	UBRR0L = 1; //Baud Rate 1 MBit (at F_CPU = 16MHz)
-	
+	UBRR0L = 1; 
 	ptr=display_buffer;
-	
-	//Enable global interrupts
 	sei();
 }
-
-
-//##############################################################################
-//                                                                             #
-// Main loop                                                                   #
-//                                                                             #
-//##############################################################################
 
 void loop()
 {
@@ -62,32 +31,14 @@ void loop()
 	}
 }
 
-
-//##############################################################################
-//                                                                             #
-// UART-Interrupt-Prozedur (called every time one byte is compeltely received) #
-//                                                                             #
-//##############################################################################
-
 ISR(USART_RX_vect)
 {
 	unsigned char b;
 	b=UDR0;
-	
 	if (b == 1)  {pos=0; ptr=display_buffer; return;}
 	if (pos == (NUMBER_OF_PIXELS*3)) {} else {*ptr=b; ptr++; pos++;}
 	if (pos == ((NUMBER_OF_PIXELS*3)-1)) {go=1;}
 }
-
-
-//##############################################################################
-//                                                                             #
-// WS2812 output routine                                                       #
-// Extracted from a ligh weight WS2812 lib by Tim (cpldcpu@gmail.com)          #
-// Found on wwww.microcontroller.net                                           #
-// Requires F_CPU = 16MHz                                                      #
-//                                                                             #
-//##############################################################################
 
 void ws2812_sendarray(uint8_t *data,uint16_t datlen)
 {
@@ -95,11 +46,9 @@ void ws2812_sendarray(uint8_t *data,uint16_t datlen)
 	uint8_t maskhi = _BV(DATA_PIN);
 	masklo =~ maskhi & DATA_PORT;
 	maskhi |= DATA_PORT;
-
 	while (datlen--)
 	{
 		curbyte = *data++;
-
 		asm volatile
 		(
 		"		ldi %0,8	\n\t"		// 0
@@ -122,14 +71,4 @@ void ws2812_sendarray(uint8_t *data,uint16_t datlen)
 		:	"r" (curbyte), "I" (_SFR_IO_ADDR(DATA_PORT)), "r" (maskhi), "r" (masklo)
 		);
 	}
-
 }
-
-
-//##############################################################################
-//                                                                             #
-// End of program                                                              #
-//                                                                             #
-//##############################################################################
-
-
